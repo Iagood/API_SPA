@@ -24,6 +24,28 @@ class User extends Authenticatable
         'imagem'
     ];
 
+    //Relacionamento de um para muitos
+    public function comentarios(){
+        return $this->hasMany('App\Models\Comentario');
+    }
+
+    //Muitos conteudos
+    public function conteudos(){
+        return $this->hasMany('App\Models\Conteudo');
+    }
+
+    public function curtidas(){
+        return $this->belongsToMany('App\Models\Conteudo', 'curtidas', 'user_id', 'conteudo_id');
+    }
+
+    public function amigos(){
+        return $this->belongsToMany('App\Models\User', 'amigos', 'user_id', 'amigo_id');
+    }
+
+    public function getImagemAttribute($value){
+        return asset($value);
+    }
+
     /**
      * The attributes that should be hidden for arrays.
      *

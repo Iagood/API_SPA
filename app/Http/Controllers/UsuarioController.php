@@ -14,7 +14,6 @@ class UsuarioController extends Controller
     public function login(Request $req)
     {
         $data = $req->all();
-
         //Validação da requisição
         $validacao = Validator::make($data, [
             'email' => 'required|string|email|max:255',
@@ -22,14 +21,14 @@ class UsuarioController extends Controller
         ]);
         //Verificando se há erro na requisição    
         if ($validacao->fails()) {
-            return $validacao->errors();
+            return ['status'=>false,"validacao"=>true,"erros"=>$validacao->errors()];
         }
         //Se estiver tudo certo com a requisição
         if (Auth::attempt(['email' => $data['email'], 'password' => $data['password']])) {
-            $user = auth()->user();
+            $user = $req->user();
             $user->token = $user->createToken($user->email)->accessToken;
-            $user->imagem = asset($user->imagem);
-            return $user;
+            // $user->imagem = asset($user->imagem);
+            return ['status'=>true,"usuario"=>$user];
         }
         //Se tiver algo errado com a requisição
         else {
@@ -38,7 +37,9 @@ class UsuarioController extends Controller
     }
     public function cadastro(Request $req)
     {
+    
         $data = $req->all();
+       
         //Validação da requisição
         $validacao = Validator::make($data, [
             'name' => 'required|string|max:255',
@@ -47,7 +48,7 @@ class UsuarioController extends Controller
         ]);
         //Verificando se há erro na requisição
         if ($validacao->fails()) {
-            return $validacao->errors();
+            return ['status'=>false,"validacao"=>true,"erros"=>$validacao->errors()];
         }
 
         $imagem = "padrao/no-photo.jpg";
@@ -62,8 +63,8 @@ class UsuarioController extends Controller
         ]);
         //Criação do token do usuário
         $user->token = $user->createToken($user->email)->accessToken;
-        $user->imagem = asset($user->imagem);
-        return $user;
+        // $user->imagem = asset($user->imagem);
+        return ['status'=>true,"usuario"=>$user];
     }
 
     public function perfil(Request $request)
@@ -79,7 +80,7 @@ class UsuarioController extends Controller
             ]);
 
             if ($validacao->fails()) {
-                return $validacao->errors();
+                return ['status'=>false,"validacao"=>true,"erros"=>$validacao->errors()];
             }
             $user->password = bcrypt($data['password']);
         } else {
@@ -88,7 +89,7 @@ class UsuarioController extends Controller
                 'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             ]);
             if ($validacao->fails()) {
-                return $validacao->errors();
+                return ['status'=>false,"validacao"=>true,"erros"=>$validacao->errors()];
             }
             $user->name = $data['name'];
             $user->email = $data['email'];
@@ -103,9 +104,9 @@ class UsuarioController extends Controller
                
             ]);
             if ($valiacao->fails()) {
-                return $valiacao->errors();
+                return ['status'=>false,"validacao"=>true,"erros"=>$validacao->errors];;
             }
-            $user->password = bcrypt($data['password']);
+            $user->imagem = bcrypt($data['imagem']);
         } else {
             $valiacao = Validator::make($data, [
                 'name' => 'required|string|max:255',
@@ -113,15 +114,14 @@ class UsuarioController extends Controller
             ]);
 
             if ($valiacao->fails()) {
-                return $valiacao->errors();
+                return ['status'=>false,"validacao"=>true,"erros"=>$validacao->errors()];
             }
             $user->name = $data['name'];
             $user->email = $data['email'];
         }
 
         if (isset($data['imagem'])) {
-
-
+            
             Validator::extend('base64image', function ($attribute, $value, $parameters, $validator) {
                 $explode = explode(',', $value);
                 $allow = ['png', 'jpg', 'svg', 'jpeg'];
@@ -153,7 +153,7 @@ class UsuarioController extends Controller
             ], ['base64image' => 'Imagem inválida']);
 
             if ($valiacao->fails()) {
-                return $valiacao->errors();
+                return ['status'=>false,"validacao"=>true,"erros"=>$validacao->errors()];
             }
 
             //Pegar o tempo segundos etc...
@@ -176,8 +176,9 @@ class UsuarioController extends Controller
             }
             //Se já houver uma imagem no diretorio, exclui primeiro para depois salvar a nova imagem
             if ($user->imagem) {
-                if (file_exists($user->imagem)) {
-                    unlink($user->imagem);
+                $imgUser = str_replace(asset('/'),'',$user->imagem);
+                if (file_exists($imgUser)) {
+                    unlink($imgUser);
                 }
             }
 
@@ -185,17 +186,14 @@ class UsuarioController extends Controller
             if (!file_exists($diretorioImagem)) {
                 mkdir($diretorioImagem, 0700);
             }
-
             file_put_contents($url, $file);
             $user->imagem = $url;
         }
 
         $user->save();
-        $user->imagem = asset($user->imagem);
+        // $user->imagem = asset($user->imagem);
         $user->token = $user->createToken($user->email)->accessToken;
-        return $user;
+        return ['status'=>true,"usuario"=>$user];
     }
-    public function usuario(Request $request){
-        return $request->user();
-    }
+
 }
